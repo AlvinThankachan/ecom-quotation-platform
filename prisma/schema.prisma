@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with role-based access control
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  role          Role      @default(CLIENT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  products      Product[]
+  quotations    Quotation[] @relation("CreatedQuotations")
+  clientQuotations Quotation[] @relation("ClientQuotations")
+}
+
+// NextAuth.js required models
+model Account {
+  id                 String  @id @default(cuid())
+  userId             String
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?  @db.Text
+  access_token       String?  @db.Text
+  expires_at         Int?
+  token_type         String?
+  scope              String?
+  id_token           String?  @db.Text
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// Product model for inventory management
+model Product {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  price       Decimal  @db.Decimal(10, 2)
+  imageUrl    String?
+  sku         String?  @unique
+  category    String?
+  brand       String?
+  inStock     Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  createdBy   User     @relation(fields: [userId], references: [id])
+  userId      String
+  quotationItems QuotationItem[]
+}
+
+// Quotation model for the quotation system
+model Quotation {
+  id          String   @id @default(cuid())
+  title       String
+  status      QuotationStatus @default(DRAFT)
+  notes       String?  @db.Text
+  totalAmount Decimal  @db.Decimal(10, 2)
+  validUntil  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  createdBy   User     @relation("CreatedQuotations", fields: [createdById], references: [id])
+  createdById String
+  client      User     @relation("ClientQuotations", fields: [clientId], references: [id])
+  clientId    String
+  items       QuotationItem[]
+}
+
+// QuotationItem model for items in a quotation
+model QuotationItem {
+  id          String   @id @default(cuid())
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2)
+  discount    Decimal? @db.Decimal(5, 2)
+  notes       String?
+  
+  // Relations
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  quotationId String
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   String
+}
+
+// Enums
+enum Role {
+  ADMIN
+  DISTRIBUTOR
+  CLIENT
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
