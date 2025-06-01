@@ -1,8 +1,10 @@
 import { initTRPC, TRPCError } from '@trpc/server';
-import { type CreateNextContextOptions } from '@trpc/server/adapters/next';
+import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
+import type { Session } from 'next-auth';
 import superjson from 'superjson';
 import { getServerSession } from 'next-auth';
 import { prisma } from '../../db/client';
+import { authOptions } from '@/lib/auth';
 
 /**
  * 1. CONTEXT
@@ -12,10 +14,19 @@ import { prisma } from '../../db/client';
 
 /**
  * Context creation for tRPC requests
+ * Supports both App Router and Pages Router
  */
-export const createTRPCContext = async (opts: CreateNextContextOptions) => {
-  const { req, res } = opts;
-  const session = await getServerSession(req, res);
+type ContextOptions = {
+  session?: Session | null;
+} & Partial<CreateNextContextOptions>;
+
+export const createTRPCContext = async (opts: ContextOptions) => {
+  let session = opts.session;
+  
+  // If session is not provided but we have req/res (Pages Router), get the session
+  if (!session && opts.req && opts.res) {
+    session = await getServerSession(authOptions);
+  }
 
   return {
     prisma,
@@ -127,3 +138,4 @@ const isDistributor = t.middleware(async ({ ctx, next }) => {
  * Distributor-only procedure (also allows admin)
  */
 export const distributorProcedure = t.procedure.use(isDistributor);
+ 

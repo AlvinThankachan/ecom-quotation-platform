@@ -7,16 +7,20 @@ import superjson from 'superjson';
 import { api } from '@/lib/api/trpc';
 import { SessionProvider } from 'next-auth/react';
 
-export function TRPCProvider({ children }: { children: React.ReactNode }) {
+interface TRPCProviderProps {
+  children: React.ReactNode;
+}
+
+export function TRPCProvider({ children }: TRPCProviderProps) {
   const [queryClient] = useState(() => new QueryClient());
   const [trpcClient] = useState(() =>
     api.createClient({
       links: [
         httpBatchLink({
           url: '/api/trpc',
-          transformer: superjson,
         }),
       ],
+      transformer: superjson,
     })
   );
 
@@ -28,3 +32,4 @@ export function TRPCProvider({ children }: { children: React.ReactNode }) {
     </api.Provider>
   );
 }
+ 

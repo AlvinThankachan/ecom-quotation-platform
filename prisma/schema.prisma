@@ -73,7 +73,6 @@ model Product {
   price       Decimal  @db.Decimal(10, 2)
   imageUrl    String?
   sku         String?  @unique
-  category    String?
   brand       String?
   inStock     Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -83,6 +82,8 @@ model Product {
   createdBy   User     @relation(fields: [userId], references: [id])
   userId      String
   quotationItems QuotationItem[]
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
 }
 
 // Quotation model for the quotation system
@@ -102,6 +103,7 @@ model Quotation {
   client      User     @relation("ClientQuotations", fields: [clientId], references: [id])
   clientId    String
   items       QuotationItem[]
+  attachments Attachment[]
 }
 
 // QuotationItem model for items in a quotation
@@ -124,6 +126,7 @@ enum Role {
   ADMIN
   DISTRIBUTOR
   CLIENT
+  USER
 }
 
 enum QuotationStatus {
@@ -132,4 +135,43 @@ enum QuotationStatus {
   ACCEPTED
   REJECTED
   EXPIRED
+  ARCHIVED
+  PENDING
+}
+
+// Category model for product grouping
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  products  Product[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Attachment model for file uploads
+model Attachment {
+  id          String   @id @default(cuid())
+  url         String
+  fileName    String
+  fileType    String?
+  fileSize    Int?
+  uploadedAt  DateTime @default(now())
+  
+  // Relations
+  quotation   Quotation @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  quotationId String
+}
+
+// CompanyProfile model for organization details
+model CompanyProfile {
+  id         String   @id @default(cuid())
+  name       String
+  logoUrl    String?
+  email      String?
+  phone      String?
+  address    String?
+  website    String?
+  taxId      String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

@@ -10,11 +10,11 @@ export const metadata: Metadata = {
   description: 'A platform for managing product inventories and generating custom quotations',
 };
 
-export default function RootLayout({
-  children,
-}: {
+interface RootLayoutProps {
   children: React.ReactNode;
-}) {
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en">
       <body className={inter.className}>

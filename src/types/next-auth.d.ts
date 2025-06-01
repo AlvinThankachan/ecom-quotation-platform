@@ -1,4 +1,5 @@
 import { DefaultSession } from 'next-auth';
+import { Role } from '@prisma/client';
 
 /**
  * Module augmentation for next-auth types
@@ -8,11 +9,11 @@ declare module 'next-auth' {
   interface Session {
     user: {
       id: string;
-      role: 'ADMIN' | 'DISTRIBUTOR' | 'CLIENT';
+      role: Role;
     } & DefaultSession['user'];
   }
 
   interface User {
-    role: 'ADMIN' | 'DISTRIBUTOR' | 'CLIENT';
+    role: Role;
   }
 }
